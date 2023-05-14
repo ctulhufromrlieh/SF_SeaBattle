@@ -1,8 +1,10 @@
 from SB_CommonTypes import PlayerType
 
+
 class GameSettings:
     def __init__(self, size_x=6, size_y=6, player_count=2, player_types=None,
                  ship_3_count=1, ship_2_count=2, ship_1_count=4) -> None:
+
         if player_types is not None:
             if not len(player_types) == player_count:
                 raise ValueError("GameSettings.__init__: player_types")

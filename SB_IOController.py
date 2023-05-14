@@ -1,35 +1,38 @@
 import sys
 from SB_CommonTypes import Point
-from SB_Data import Field
 from SB_Ships import NavyData
 
-# from SB_Player import Player
-# from SB_Player import PlayerHuman
-# from SB_Player import PlayerComputer
 
 class CoordsError(ValueError):
     pass
 
-class CoordsError_Format(CoordsError):
+
+class CoordsErrorFormat(CoordsError):
     pass
 
-class CoordsError_Format_Count(CoordsError_Format):
+
+class CoordsErrorFormatCount(CoordsErrorFormat):
     pass
 
 # class CoordsError_Format_NoFloat(CoordsError_Format):
 #     pass
 
-class CoordsError_OutOfRange(CoordsError):
+
+class CoordsErrorOutOfRange(CoordsError):
     pass
 
-class CoordsError_AlreadyUsed(CoordsError):
+
+class CoordsErrorAlreadyUsed(CoordsError):
     pass
+
+
 class IOController:
     def __init__(self):
         pass
 
     def show_message(self, msg: str) -> None:
         raise Exception("IOController.show_message: Abstract error!")
+
     def ask_menu(self, caption, items, default_item_index=0):
         raise Exception("IOController.ask_menu: Abstract error!")
 
@@ -45,10 +48,12 @@ class IOController:
     def show_navy_data_usage_field(self, navy_data: NavyData):
         raise Exception("IOController.show_navy_data_usage_field: Abstract error!")
 
+
 class IOControllerConsole(IOController):
 
     def show_message(self, msg: str) -> None:
         print(msg)
+
     def ask_menu(self, caption, items, default_item_index=0):
         if len(items) == 0:
             raise ValueError("IOControllerConsole.ask_menu: Wrong len(items)")
@@ -75,33 +80,15 @@ class IOControllerConsole(IOController):
 
     def ask_coords(self, caption, enemy_field) -> Point:
         while True:
-            new_point = None
             try:
                 coord_s = input(caption)
                 if coord_s.lower() in ['exit', 'quit']:
                     sys.exit(0)
 
                 coord_values = coord_s.split()
-                # if len(coord_values) < 2:
-                #     # print("Wrong coordinates - less then two numbers. Re-enter your coordinates!")
-                #     raise CoordsError_Format_Count
-                # elif not coord_values[0].isnumeric() or not coord_values[1].isnumeric():
-                #     # print("Wrong coordinates - not a number. Re-enter your coordinates!")
-                #     raise CoordsError_Format_NoFloat
-                # else:
-                #     a_ix = int(coord_values[0]) - 1
-                #     a_iy = int(coord_values[1]) - 1
-                #     new_point = Point(a_ix, a_iy)
-                #
-                #     if not enemy_field.is_point_in_field(new_point):
-                #         # print("Wrong coordinates - point is out of range. Re-enter your coordinates!")
-                #         raise CoordsError_OutOfRange
-                #     elif enemy_field.is_point_used(new_point):
-                #         # print("Wrong coordinates - point is already used. Re-enter your coordinates!")
-                #         raise CoordsError_AlreadyUsed
                 if len(coord_values) < 2:
                     # print("Wrong coordinates - less then two numbers. Re-enter your coordinates!")
-                    raise CoordsError_Format_Count
+                    raise CoordsErrorFormatCount
                 else:
                     a_ix = int(coord_values[0]) - 1
                     a_iy = int(coord_values[1]) - 1
@@ -109,17 +96,17 @@ class IOControllerConsole(IOController):
 
                     if not enemy_field.is_point_in_field(new_point):
                         # print("Wrong coordinates - point is out of range. Re-enter your coordinates!")
-                        raise CoordsError_OutOfRange
+                        raise CoordsErrorOutOfRange
                     elif enemy_field.is_point_used(new_point):
                         # print("Wrong coordinates - point is already used. Re-enter your coordinates!")
-                        raise CoordsError_AlreadyUsed
+                        raise CoordsErrorAlreadyUsed
                     # else:
                     #     return new_point
-            except CoordsError_Format_Count:
+            except CoordsErrorFormatCount:
                 print("Wrong coordinates - less then two values. Re-enter your coordinates!")
-            except CoordsError_OutOfRange:
+            except CoordsErrorOutOfRange:
                 print("Wrong coordinates - point is out of range. Re-enter your coordinates!")
-            except CoordsError_AlreadyUsed:
+            except CoordsErrorAlreadyUsed:
                 print("Wrong coordinates - point is already used. Re-enter your coordinates!")
             except ValueError:
                 print("Wrong coordinates - not a number. Re-enter your coordinates!")
@@ -179,9 +166,7 @@ class IOControllerConsole(IOController):
 
         offset = 12
 
-        # print("Current state:")
-
-        #player names
+        # player names
         curr_line = ""
         for curr_player_index, curr_player_name in enumerate(player_names):
             if curr_player_index == selected_player_index:
@@ -216,8 +201,6 @@ class IOControllerConsole(IOController):
                     curr_line_num = ""
 
                 curr_line += curr_line_num + " | ".join(field_values_s)
-
-                    # curr_line = f"{1 + curr_row_index}|" + curr_line
                 curr_line += " " * offset
             print(curr_line)
 

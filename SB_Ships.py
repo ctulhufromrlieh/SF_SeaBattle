@@ -8,10 +8,17 @@ from SB_Data import Field
 from SB_Data import HitField
 
 
+class ShipError(Exception):
+    pass
+
+
+class ShipPlaceError(ShipError):
+    pass
+
+
 class Ship:
     def __init__(self, position: Point, loc_points):
         self.__position = position
-        # self.__loc_points = loc_points
         self.set_loc_points(loc_points)
         self.__loc_size_box = None
         self.refresh_size_box()
@@ -104,7 +111,6 @@ class LinearShip(Ship):
     @direction.setter
     def direction(self, value):
         self.__direction = value
-        # self.__loc_points = self.calc_loc_points(self.__direction, self.__size)
         self.set_loc_points(self.calc_loc_points(self.__direction, self.__size))
         self.refresh_size_box()
 
@@ -120,8 +126,6 @@ class NavyData:
         self.__size_y = settings.size_y
         self.__usage_field = Field(self.__size_x, self.__size_y)
         self.__hit_field = HitField(self.__size_x, self.__size_y)
-        # self.__usage_matrix = [[0 for curr_x in range(settings.size_x)] for curr_y in range(settings.size_y)]
-        # self.__empty_cell_count = settings.size_x * settings.size_y
 
     def get_ship(self, ship_index):
         return self.__ships[ship_index]
@@ -166,36 +170,23 @@ class NavyData:
             curr_loc_point = ship.get_loc_point(curr_loc_point_index)
             curr_point = pos + curr_loc_point
             if not (self.is_empty_cell(curr_point) and
-                self.is_empty_cell(Point(curr_point.x - 1, curr_point.y), True) and
-                self.is_empty_cell(Point(curr_point.x + 1, curr_point.y), True) and
-                self.is_empty_cell(Point(curr_point.x, curr_point.y - 1), True) and
-                self.is_empty_cell(Point(curr_point.x, curr_point.y + 1), True)):
+                    self.is_empty_cell(Point(curr_point.x - 1, curr_point.y), True) and
+                    self.is_empty_cell(Point(curr_point.x + 1, curr_point.y), True) and
+                    self.is_empty_cell(Point(curr_point.x, curr_point.y - 1), True) and
+                    self.is_empty_cell(Point(curr_point.x, curr_point.y + 1), True)):
                 return False
 
         return True
-
-    # def abs_index_to_point(self, abs_index):
-    #     curr_abs_index = 0
-    #     for curr_si
 
     def mark_cell_as_void(self, point):
         if self.__usage_field.is_point_in_field(point):
             if not self.__usage_field.get_field_value(point.x, point.y):
                 self.__usage_field.set_field_value(point.x, point.y, -1)
-        # if not self.__usage_field[point.y][point.x]:
-            # self.__usage_field[point.y][point.x] = -1
-            # self.__empty_cell_count -= 1
 
     def add_ship(self, ship, ship_index, abs_index, stop_index=None):
-        # if abs_index == stop_index:
-        #     raise Exception("NavyData.add_ship: Cannot place ship!!!")
-
         stop_index = abs_index
         curr_abs_index = abs_index
         while True:
-            # if abs_index >= self.__usage_field.available_count:
-            #     abs_index = 0
-
             pos = self.__usage_field.get_point_by_abs_index(curr_abs_index)
             if self.is_ship_can_be_placed(ship, pos):
                 ship.position = pos
@@ -217,10 +208,4 @@ class NavyData:
                 if curr_abs_index >= self.__usage_field.available_count:
                     curr_abs_index = 0
                 elif curr_abs_index == stop_index:
-                    raise Exception("NavyData.add_ship: Cannot place ship!!!")
-
-                # if stop_index is None:
-                #     self.add_ship(ship, ship, abs_index + 1, abs_index)
-                # else:
-                #     self.add_ship(ship, ship, abs_index + 1, stop_index)
-
+                    raise ShipPlaceError("NavyData.add_ship: Cannot place ship!!!")

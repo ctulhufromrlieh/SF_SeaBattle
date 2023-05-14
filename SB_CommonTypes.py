@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class Point:
     def __init__(self, x, y) -> None:
         self.__x = x
@@ -32,6 +33,7 @@ class Point:
 
     def create_moved(self, dx, dy):
         return Point(self.x + dx, self.y + dy)
+
 
 class SizeBox:
     def __init__(self, x_min, y_min, x_max, y_max) -> None:
@@ -71,18 +73,20 @@ class SizeBox:
         return self.__y_max - self.__y_min
 
 
-
 class Direction(Enum):
     HORIZONTAL = 1
     VERTICAL = 2
+
 
 class PlayerType(Enum):
     PLAYER_TYPE_HUMAN = 1
     PLAYER_TYPE_COMPUTER = 2
 
+
 class GameFinishType(Enum):
     GAME_FINISH_TYPE_NONE = 0
     GAME_FINISH_TYPE_WIN = 1
+
 
 class GameFinish:
     def __init__(self, gft: GameFinishType, player_index):

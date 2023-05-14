@@ -7,12 +7,6 @@ from SB_Ships import LinearShip
 from SB_Ships import NavyData
 from SB_Settings import GameSettings
 
-class ShipError(Exception):
-    pass
-
-
-class ShipPlaceError(ShipError):
-    pass
 
 class ShipPlacer:
     def place_ship(self, navy_data: NavyData, ship: Ship, ship_index: int) -> None:

@@ -1,5 +1,5 @@
 from SB_Settings import GameSettings
-from SB_Ships import ShipPlacerRandom
+from SB_ShipPlacer import ShipPlacerRandom
 from SB_CommonTypes import PlayerType
 from SB_IOController import IOControllerConsole
 

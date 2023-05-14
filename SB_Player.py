@@ -23,26 +23,17 @@ class Player:
     def name(self):
         return self.__name
 
-    # def get_name(self):
-    #     return ""
-
 
 class PlayerHuman(Player):
     def __init__(self, io_controller: IOController):
         super().__init__(io_controller, "Player")
-        # self.__io_controller = io_controller
 
     def calc_coords(self, enemy_field: Field) -> Point:
         return self.io_controller.ask_coords(f"Enter coordinates (format <X Y>), {self.name}: ", enemy_field)
 
-    # def get_name(self):
-    #     return "Player"
-
 
 class PlayerComputer(Player):
     pass
-    # def get_name(self):
-    #     return "Computer"
 
 
 class PlayerComputerRandom(PlayerComputer):

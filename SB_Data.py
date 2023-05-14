@@ -7,11 +7,6 @@ class Field:
         self.__size_y = size_y
         self.__available_count = self.__size_x * self.__size_y
         self.__field = [[0 for curr_x in range(self.size_x)] for curr_y in range(self.size_y)]
-        # self.__field = []
-        # for curr_y in range(self.__size_y):
-        #     self.__field.append([])
-        #     for curr_x in range(self.__size_x):
-        #         self.__field[-1].append(0)
 
     @property
     def size_x(self):
@@ -54,9 +49,6 @@ class Field:
                         curr_abs_index += 1
 
     def get_field_value(self, x, y) -> int:
-        # if self.is_point_used_by_coords(x, y):
-        #     raise ValueError("Field.field_values*getter: point is already used")
-
         return self.__field[y][x]
 
     # @field_values.setter
@@ -74,7 +66,6 @@ class Field:
 
 class HitField(Field):
     def hit_by_point(self, point: Point):
-        # self.field_values[point.x, point.y] = 1
         self.set_field_value(point.x, point.y, 1)
 
     def hit_by_abs_index(self, abs_index):
