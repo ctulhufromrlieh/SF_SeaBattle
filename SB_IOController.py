@@ -37,7 +37,10 @@ class IOController:
         raise Exception("IOController.ask_coords: Abstract error!")
 
     def show_field(self, navy_data: NavyData, is_show_full: bool):
-        raise Exception("IOController.show_enemy_field: Abstract error!")
+        raise Exception("IOController.show_field: Abstract error!")
+
+    def show_fields(self, navy_datas, player_names, selected_player_index: int, player_human_index: int):
+        raise Exception("IOController.show_fields: Abstract error!")
 
     def show_navy_data_usage_field(self, navy_data: NavyData):
         raise Exception("IOController.show_navy_data_usage_field: Abstract error!")

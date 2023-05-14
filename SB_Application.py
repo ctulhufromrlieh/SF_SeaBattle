@@ -1,3 +1,5 @@
+import collections
+
 from SB_Settings import PlayerType
 from SB_Settings import GameSettings
 
@@ -6,8 +8,10 @@ from SB_Player import PlayerHuman
 from SB_Player import PlayerComputerRandom
 
 from SB_Ships import NavyData
-from SB_Ships import ShipPlacer
-from SB_Ships import ShipPlacerRandom
+from SB_ShipPlacer import ShipPlacer
+from SB_ShipPlacer import ShipPlacerRandom
+# from SB_Ships import ShipPlacer
+# from SB_Ships import ShipPlacerRandom
 
 from SB_Data import Field
 from SB_Data import HitField
@@ -18,18 +22,43 @@ from SB_IOController import IOController
 from SB_IOController import IOControllerConsole
 
 
-class GameApplication:
-    def __init__(self, settings: GameSettings) -> None:
-        self.__settings = settings
+class GameData:
+    def __init__(self):
         self.__players = []
         self.__navy_datas = []
-        # self.__enemy_fields = []
-        # self.__enemy_fields = []
-        self.__io_controller = None
 
-    @staticmethod
-    def create_io_controller() -> IOController:
-        return IOControllerConsole()
+    # for read-only
+    @property
+    def players(self):
+        return self.__players.copy()
+
+    # for read-only
+    @property
+    def navy_datas(self):
+        return self.__navy_datas.copy()
+
+    @property
+    def player_count(self):
+        return len(self.__players)
+
+    def append_player_data(self, player: Player, navy_data: NavyData) -> None:
+        self.__players.append(player)
+        self.__navy_datas.append(navy_data)
+
+class GameLogic:
+    pass
+
+
+class GameLogicSeaBattle(GameLogic):
+    def __init__(self, io_controller: IOController, settings: GameSettings):
+        self.__io_controller = io_controller
+        self.__settings = settings
+        self.__data = GameData()
+        self.__player_names = []
+
+    @property
+    def data(self):
+        return self.__data
 
     @staticmethod
     def get_computer_name(settings: GameSettings, player_index: int) -> str:
@@ -61,25 +90,63 @@ class GameApplication:
         return ship_placer.calc_place(self.__settings)
 
     def initialize(self):
-        # self.__enemy_fields = [HitField(self.__settings.size_x, self.__settings.size_y),
-        #                        HitField(self.__settings.size_x, self.__settings.size_y)]
-
         ship_placer = self.create_ship_placer()
-        self.__io_controller = self.create_io_controller()
 
         for curr_player_index in range(self.__settings.player_count):
             curr_player_type = self.__settings.get_player_type(curr_player_index)
-            self.__players.append(self.create_player_by_player_type(self.__io_controller, curr_player_index, curr_player_type))
-            self.__navy_datas.append(self.create_navy_data_by_player_index(ship_placer))
+            curr_player = self.create_player_by_player_type(self.__io_controller, curr_player_index, curr_player_type)
+            curr_navy_data = self.create_navy_data_by_player_index(ship_placer)
+            self.__data.append_player_data(curr_player, curr_navy_data)
 
-    # def is_game_finished(self):
-    #     return self.calc_gf().type == GameFinishType.GAME_FINISH_TYPE_WIN
+        self.__player_names = [curr_player.name for curr_player in self.data.players]
+
+        self.init_show()
+
+    def init_show(self):
+        self.__io_controller.show_message("=" * 20)
+        self.__io_controller.show_message("Wellcome to Sea Battle game!")
+        self.__io_controller.show_message("=" * 20)
+        self.__io_controller.show_message("")
+
+        # player_names = [curr_player.name for curr_player in self.__game_logic.data.players]
+        self.__io_controller.show_message("Initial state:")
+        self.__io_controller.show_fields(self.data.navy_datas,
+                                         self.__player_names, -1, self.__settings.player_human_index)
+
+    def make_turn(self, player_index, round_index):
+        self.__io_controller.show_message("=" * 20)
+        self.__io_controller.show_message(f"  Round #{round_index + 1}.")
+        self.__io_controller.show_message(f"  Turn of <{self.data.players[player_index].name}>:")
+
+        # enemy_index = self.get_enemy_index(player_index)
+        enemy_index = self.get_enemy_index(player_index)
+        enemy_field: HitField = self.data.navy_datas[enemy_index].hit_field
+
+        self.__io_controller.show_message("Current state:")
+        self.__io_controller.show_fields(self.data.navy_datas, self.__player_names,
+                                         player_index, self.__settings.player_human_index)
+
+        target_point = self.data.players[player_index].calc_coords(enemy_field)
+        enemy_field.hit_by_point(target_point)
+
+    def is_end_of_game(self):
+        gf = self.calc_gf()
+        if gf.type == GameFinishType.GAME_FINISH_TYPE_WIN:
+            self.__io_controller.show_message("")
+            self.__io_controller.show_message("Final state:")
+            self.__io_controller.show_fields(self.data.navy_datas, self.__player_names, -1,
+                                             self.__settings.player_human_index)
+
+            self.__io_controller.show_message(f"{self.data.players[gf.player_index].name} win!")
+
+            return True
+
+        return False
 
     def calc_gf(self) -> GameFinish:
-        player_winner = -1
         player_looser = -1
-        for curr_player_index in range(len(self.__navy_datas)):
-            if self.__navy_datas[curr_player_index].is_all_ships_destroyed():
+        for curr_player_index, curr_navy_data in enumerate(self.__data.navy_datas):
+            if curr_navy_data.is_all_ships_destroyed():
                 player_looser = curr_player_index
                 break
 
@@ -98,7 +165,7 @@ class GameApplication:
         else:
             return GameFinish(GameFinishType.GAME_FINISH_TYPE_WIN, player_winner)
 
-    def get_enemy_index(self, player_index: int) -> HitField:
+    def get_enemy_index(self, player_index: int) -> int:
         if player_index == 0:
             return 1
         elif player_index == 1:
@@ -109,54 +176,93 @@ class GameApplication:
 
     def get_enemy_field(self, player_index: int) -> HitField:
         if player_index == 0:
-            return self.__navy_datas[1].hit_field
+            # return self.__navy_datas[1].hit_field
+            return self.__data.navy_datas[1].hit_field
         elif player_index == 1:
-            return self.__navy_datas[0].hit_field
+            return self.__data.navy_datas[0].hit_field
         else:
             # these conditions only for two players but may be in the future...
             raise Exception("GameApplication.get_enemy_field: player_looser value (may be playercount > 2)")
 
+    def switch_player_and_round(self, _player_index, _round_index):
+        player_index = _player_index + 1
+        round_index = _round_index
+        if player_index >= self.__settings.player_count:
+            player_index = 0
+            round_index += 1
+
+        return player_index, round_index
+
+class GameApplication:
+    def __init__(self, settings: GameSettings) -> None:
+        self.__settings = settings
+        # self.__data = GameData()
+        # self.__players = []
+        # self.__navy_datas = []
+        # self.__enemy_fields = []
+        # self.__enemy_fields = []
+        # self.__io_controller = None
+        self.__io_controller = self.create_io_controller()
+        self.__game_logic = self.create_game_logic()
+
+    def create_game_logic(self):
+        return GameLogicSeaBattle(self.__io_controller, self.__settings)
+
+    @staticmethod
+    def create_io_controller() -> IOController:
+        return IOControllerConsole()
+
     def run(self):
-        self.initialize()
+        # self.initialize()
+        # self.__io_controller = self.create_io_controller()
+        self.__game_logic.initialize()
+        # self.__game_logic.init_show()
 
-        self.__io_controller.show_message("=" * 20)
-        self.__io_controller.show_message("Wellcome to Sea Battle game!")
-        self.__io_controller.show_message("=" * 20)
-        self.__io_controller.show_message("")
-
-        player_names = [curr_player.name for curr_player in self.__players]
-        self.__io_controller.show_message("Initial state:")
-        self.__io_controller.show_fields(self.__navy_datas, player_names, -1, self.__settings.player_human_index)
+        # self.__io_controller.show_message("=" * 20)
+        # self.__io_controller.show_message("Wellcome to Sea Battle game!")
+        # self.__io_controller.show_message("=" * 20)
+        # self.__io_controller.show_message("")
+        #
+        # player_names = [curr_player.name for curr_player in self.__game_logic.data.players]
+        # self.__io_controller.show_message("Initial state:")
+        # self.__io_controller.show_fields(self.__game_logic.data.navy_datas, player_names, -1, self.__settings.player_human_index)
 
         player_index = 0
         round_index = 0
         while True:
-            self.__io_controller.show_message("=" * 20)
-            self.__io_controller.show_message(f"  Round #{round_index + 1}.")
-            self.__io_controller.show_message(f"  Turn of <{self.__players[player_index].name}>:")
+            # self.__io_controller.show_message("=" * 20)
+            # self.__io_controller.show_message(f"  Round #{round_index + 1}.")
+            # self.__io_controller.show_message(f"  Turn of <{self.__game_logic.data.players[player_index].name}>:")
+            #
+            # # enemy_index = self.get_enemy_index(player_index)
+            # enemy_index = self.__game_logic.get_enemy_index(player_index)
+            # enemy_field: HitField = self.__game_logic.data.navy_datas[enemy_index].hit_field
+            #
+            # self.__io_controller.show_message("Current state:")
+            # self.__io_controller.show_fields(self.__game_logic.data.navy_datas, player_names,
+            #                                  player_index, self.__settings.player_human_index)
+            #
+            # target_point = self.__game_logic.data.players[player_index].calc_coords(enemy_field)
+            # enemy_field.hit_by_point(target_point)
 
-            enemy_index = self.get_enemy_index(player_index)
-            enemy_field: HitField = self.__navy_datas[enemy_index].hit_field
+            self.__game_logic.make_turn(player_index, round_index)
 
-            self.__io_controller.show_message("Current state:")
-            self.__io_controller.show_fields(self.__navy_datas, player_names,
-                                             player_index, self.__settings.player_human_index)
-
-            target_point = self.__players[player_index].calc_coords(enemy_field)
-            enemy_field.hit_by_point(target_point)
-
-            gf = self.calc_gf()
-            if gf.type == GameFinishType.GAME_FINISH_TYPE_WIN:
-                self.__io_controller.show_message("")
-                self.__io_controller.show_message("Final state:")
-                self.__io_controller.show_fields(self.__navy_datas, player_names, player_index,
-                                                 self.__settings.player_human_index)
-
-                self.__io_controller.show_message(f"{self.__players[gf.player_index].name} win!")
+            # gf = self.__game_logic.calc_gf()
+            # if gf.type == GameFinishType.GAME_FINISH_TYPE_WIN:
+            #     self.__io_controller.show_message("")
+            #     self.__io_controller.show_message("Final state:")
+            #     self.__io_controller.show_fields(self.__game_logic.data.navy_datas, player_names, player_index,
+            #                                      self.__settings.player_human_index)
+            #
+            #     self.__io_controller.show_message(f"{self.__game_logic.data.players[gf.player_index].name} win!")
+            #     break
+            if self.__game_logic.is_end_of_game():
                 break
 
-            player_index += 1
-            if player_index >= self.__settings.player_count:
-                player_index = 0
-                round_index += 1
+            # player_index += 1
+            # if player_index >= self.__settings.player_count:
+            #     player_index = 0
+            #     round_index += 1
+
+            player_index, round_index = self.__game_logic.switch_player_and_round(player_index, round_index)
     
